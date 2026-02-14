@@ -110,6 +110,7 @@ export const getProfile = async (req: Request, res: Response) => {
         finishedAt: true,
         totalVolume: true,
         type: true,
+        distance: true,
         location: true
       }
     });

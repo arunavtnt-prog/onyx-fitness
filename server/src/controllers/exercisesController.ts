@@ -11,6 +11,7 @@ export const getExercises = async (req: Request, res: Response) => {
     const muscleGroup = req.query.muscleGroup as string || '';
     const type = req.query.type as string || '';
 
+    // Build Prisma where clause with proper typing
     const where: any = {};
 
     if (search) {
