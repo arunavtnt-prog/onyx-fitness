@@ -96,25 +96,21 @@ export const likeFeedItem = async (req: Request, res: Response) => {
     }
 
     // Check if already liked
-    const existingLike = await prisma.like.findUnique({
+    const existingLike = await prisma.like.findFirst({
       where: {
-        userId_feedItemId: {
-          userId,
-          feedItemId: id
-        }
-      }
+        userId,
+        feedItemId: id
+      } as any
     });
 
     if (existingLike) {
       // Unlike
-      await prisma.like.delete({
+      await prisma.like.deleteMany({
         where: {
-          userId_feedItemId: {
-            userId,
-            feedItemId: id
-          }
+          userId,
+          feedItemId: id
         }
-      });
+      } as any);
 
       await prisma.feedItem.update({
         where: { id },
@@ -136,7 +132,7 @@ export const likeFeedItem = async (req: Request, res: Response) => {
       where: { id },
       data: { likes: { increment: 1 } },
       select: { likes: true }
-    });
+    } as any);
 
     return res.json({ liked: true, likes: feedItem.likes });
   } catch (error) {
@@ -174,7 +170,7 @@ export const commentFeedItem = async (req: Request, res: Response) => {
       where: { id },
       data: { comments: { increment: 1 } },
       select: { comments: true }
-    });
+    } as any);
 
     return res.status(201).json({
       comment,
