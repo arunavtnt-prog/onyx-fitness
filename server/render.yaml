@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: onyx-fitness-api
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm run start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: onyx-fitness-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://onyx-fitness-pi.vercel.app
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: onyx-fitness-db
+    plan: free
+    databaseName: onyx_fitness
+    user: onyx_fitness_user
