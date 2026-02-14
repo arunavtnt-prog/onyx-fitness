@@ -1,0 +1,177 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  avatar       String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // User stats
+  totalWorkouts Int      @default(0) @map("total_workouts")
+  totalHours    Float    @default(0) @map("total_hours")
+  currentStreak Int      @default(0) @map("current_streak")
+  longestStreak Int      @default(0) @map("longest_streak")
+
+  // Relations
+  workoutSessions WorkoutSession[]
+  feedItems       FeedItem[]
+  routines        Routine[]
+
+  @@map("users")
+}
+
+model Exercise {
+  id          String   @id @default(cuid())
+  name        String
+  muscleGroup String   @map("muscle_group")
+  type        String
+  image       String?
+  defaultSets Int      @default(3) @map("default_sets")
+  defaultReps String   @default("10") @map("default_reps")
+  defaultRest Int      @default(60) @map("default_rest")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  routineExercises RoutineExercise[]
+
+  @@map("exercises")
+}
+
+model Routine {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  exercises RoutineExercise[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("routines")
+}
+
+model RoutineExercise {
+  id        String   @id @default(cuid())
+  routineId String   @map("routine_id")
+  exerciseId String  @map("exercise_id")
+  order     Int
+  sets      Int
+  reps      String
+  rest      Int
+
+  // Relations
+  routine  Routine   @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([routineId, exerciseId])
+  @@map("routine_exercises")
+}
+
+model WorkoutSession {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  startedAt   DateTime @default(now()) @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  duration    Int? // Duration in seconds
+  type        String // 'lift', 'run', 'circuit'
+
+  // Stats
+  totalVolume Float   @default(0) @map("total_volume") // in lbs
+  totalSets   Int     @default(0) @map("total_sets")
+  totalReps   Int     @default(0) @map("total_reps")
+
+  // Run-specific fields
+  distance    Float?  // in km
+  pace        String? // formatted pace like "4:48"
+  calories    Int?
+
+  // Location
+  location    String?
+
+  // Relations
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sets    WorkoutSet[]
+
+  @@map("workout_sessions")
+}
+
+model WorkoutSet {
+  id              String   @id @default(cuid())
+  sessionId       String   @map("session_id")
+  exerciseId      String   @map("exercise_id")
+  exerciseName    String   @map("exercise_name")
+  order           Int
+  weight          Float // in lbs
+  reps            Int
+  completed       Boolean  @default(false)
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  session WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("workout_sets")
+}
+
+model FeedItem {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  sessionId   String?  @map("session_id") // Optional link to workout session
+  type        String   // 'lift', 'run', 'circuit'
+  title       String
+  description String?
+  imageUrl    String?  @map("image_url")
+  mapImageUrl String?  @map("map_image_url")
+  location    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Stats (stored as JSON string)
+  tags        String   @default("[]") // JSON array of {label, type}
+  stats       String   @default("[]") // JSON array of {label, value, unit}
+  exercisesCount Int?  @map("exercises_count")
+
+  // Engagement
+  likes       Int      @default(0)
+  comments    Int      @default(0)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feed_items")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  feedItemId String  @map("feed_item_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, feedItemId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  feedItemId String  @map("feed_item_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("comments")
+}
